@@ -12,32 +12,79 @@ import {
 const MAX_EDGE = 1024;
 const JPEG_QUALITY = 0.72;
 
-async function compressImageFile(file: File): Promise<string> {
-  if (!file.type.startsWith("image/")) {
-    throw new Error("画像ファイルを選択してください。");
-  }
+function looksLikeImage(file: File): boolean {
+  if (file.type.startsWith("image/")) return true;
+  // Some mobile browsers leave type empty; fall back to extension.
+  return /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i.test(file.name);
+}
 
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
-  const width = Math.max(1, Math.round(bitmap.width * scale));
-  const height = Math.max(1, Math.round(bitmap.height * scale));
+async function loadImageElement(file: File): Promise<HTMLImageElement> {
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () =>
+        reject(new Error("この写真形式は読み込めませんでした。JPEG/PNGで再保存して試してください。"));
+      img.src = objectUrl;
+    });
+    return image;
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+async function compressImageFile(file: File): Promise<string> {
+  if (!looksLikeImage(file)) {
+    throw new Error("画像ファイルを選択してください（JPEG / PNG / WebP）。");
+  }
 
   const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) {
-    bitmap.close();
     throw new Error("画像の処理に失敗しました。");
   }
-  ctx.drawImage(bitmap, 0, 0, width, height);
-  bitmap.close();
 
-  const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
-  // Clear canvas pixels from memory as much as possible
-  canvas.width = 0;
-  canvas.height = 0;
-  return dataUrl;
+  try {
+    // Prefer createImageBitmap, but fall back for picky mobile browsers.
+    let width = 0;
+    let height = 0;
+    let drawable: ImageBitmap | HTMLImageElement | null = null;
+
+    try {
+      const bitmap = await createImageBitmap(file);
+      drawable = bitmap;
+      width = bitmap.width;
+      height = bitmap.height;
+    } catch {
+      const image = await loadImageElement(file);
+      drawable = image;
+      width = image.naturalWidth || image.width;
+      height = image.naturalHeight || image.height;
+    }
+
+    if (!width || !height) {
+      throw new Error("画像サイズを取得できませんでした。");
+    }
+
+    const scale = Math.min(1, MAX_EDGE / Math.max(width, height));
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    ctx.drawImage(drawable, 0, 0, canvas.width, canvas.height);
+
+    if ("close" in drawable && typeof drawable.close === "function") {
+      drawable.close();
+    }
+
+    const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+    if (!dataUrl.startsWith("data:image/jpeg")) {
+      throw new Error("画像の変換に失敗しました。");
+    }
+    return dataUrl;
+  } finally {
+    canvas.width = 0;
+    canvas.height = 0;
+  }
 }
 
 function careLevelClass(level: string): string {
@@ -197,8 +244,7 @@ export default function BeautyConciergeApp() {
               <input
                 ref={inputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp"
-                capture="user"
+                accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
                 hidden
                 onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
               />
@@ -216,6 +262,9 @@ export default function BeautyConciergeApp() {
                 </button>
               )}
             </div>
+            <p className="muted">
+              写真ライブラリから選べます。拡張子が png でも中身が JPEG の写真にも対応しています。
+            </p>
             {!consent && (
               <p className="muted">診断には上部のプライバシー同意が必要です。</p>
             )}
