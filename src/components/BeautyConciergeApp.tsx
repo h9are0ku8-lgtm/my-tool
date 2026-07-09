@@ -9,13 +9,35 @@ import {
   todayKey,
 } from "@/lib/storage";
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("画像の読み込みに失敗しました"));
-    reader.readAsDataURL(file);
-  });
+const MAX_EDGE = 1024;
+const JPEG_QUALITY = 0.72;
+
+async function compressImageFile(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("画像ファイルを選択してください。");
+  }
+
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+  const width = Math.max(1, Math.round(bitmap.width * scale));
+  const height = Math.max(1, Math.round(bitmap.height * scale));
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    bitmap.close();
+    throw new Error("画像の処理に失敗しました。");
+  }
+  ctx.drawImage(bitmap, 0, 0, width, height);
+  bitmap.close();
+
+  const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
+  // Clear canvas pixels from memory as much as possible
+  canvas.width = 0;
+  canvas.height = 0;
+  return dataUrl;
 }
 
 function careLevelClass(level: string): string {
@@ -32,6 +54,7 @@ export default function BeautyConciergeApp() {
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
   const [entries, setEntries] = useState<GrowthEntry[]>([]);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
+  const [consent, setConsent] = useState(false);
 
   useEffect(() => {
     setEntries(loadGrowthEntries());
@@ -49,14 +72,25 @@ export default function BeautyConciergeApp() {
     setResult(null);
     setSavedMessage(null);
     try {
-      const dataUrl = await fileToDataUrl(file);
+      const dataUrl = await compressImageFile(file);
       setPreview(dataUrl);
     } catch (e) {
       setError(e instanceof Error ? e.message : "画像読み込みエラー");
     }
   }
 
+  function clearPreview() {
+    setPreview(null);
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
+  }
+
   async function analyze() {
+    if (!consent) {
+      setError("続行するにはプライバシー同意が必要です。");
+      return;
+    }
     if (!preview) {
       setError("先に肌写真をアップロードしてください。");
       return;
@@ -64,17 +98,26 @@ export default function BeautyConciergeApp() {
     setLoading(true);
     setError(null);
     setSavedMessage(null);
+
+    // Keep a local copy only for this request, then wipe UI preview ASAP after send
+    const imageForRequest = preview;
+
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageDataUrl: preview }),
+        body: JSON.stringify({
+          imageDataUrl: imageForRequest,
+          consent: true,
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "解析に失敗しました");
       }
       setResult(data as AnalyzeResponse);
+      // Do not keep the face image in UI/memory longer than needed
+      clearPreview();
     } catch (e) {
       setError(e instanceof Error ? e.message : "解析に失敗しました");
     } finally {
@@ -95,7 +138,7 @@ export default function BeautyConciergeApp() {
     };
     const next = saveGrowthEntry(entry);
     setEntries(next);
-    setSavedMessage("今日の成長記録を保存しました。");
+    setSavedMessage("今日の成長記録を保存しました（写真は保存していません）。");
   }
 
   function resetHistory() {
@@ -115,11 +158,34 @@ export default function BeautyConciergeApp() {
         </p>
       </header>
 
+      <section className="panel privacy-panel">
+        <h2>プライバシーと安全について</h2>
+        <ul className="privacy-list">
+          <li>写真は解析のためだけに一時利用し、サーバーには保存しません。</li>
+          <li>解析後、画面上の写真プレビューもすぐ破棄します。</li>
+          <li>成長記録には文章結果のみを端末内保存し、写真は含めません。</li>
+          <li>APIキーはサーバー側のみで扱い、ブラウザには出しません。</li>
+          <li>本サービスは美容アドバイスであり、医療診断ではありません。</li>
+        </ul>
+        <label className="consent">
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+          />
+          <span>
+            上記に同意し、肌写真を解析目的で一時送信することを許可します。
+          </span>
+        </label>
+      </section>
+
       <section className="panel">
         <div className="upload-grid">
           <div>
             <h2>1. 肌を撮る / アップロード</h2>
-            <p className="muted">自然光で、顔全体か気になる部位を撮影してください。</p>
+            <p className="muted">
+              送信前に端末内で圧縮します。解析後はプレビューを自動削除します。
+            </p>
             <div className="actions">
               <button
                 type="button"
@@ -131,7 +197,7 @@ export default function BeautyConciergeApp() {
               <input
                 ref={inputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 capture="user"
                 hidden
                 onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
@@ -139,12 +205,20 @@ export default function BeautyConciergeApp() {
               <button
                 type="button"
                 className="btn"
-                disabled={!preview || loading}
+                disabled={!preview || loading || !consent}
                 onClick={analyze}
               >
                 {loading ? "解析中..." : "AI診断する"}
               </button>
+              {preview && (
+                <button type="button" className="btn ghost" onClick={clearPreview}>
+                  写真を破棄
+                </button>
+              )}
             </div>
+            {!consent && (
+              <p className="muted">診断には上部のプライバシー同意が必要です。</p>
+            )}
             {error && <p className="error">{error}</p>}
           </div>
           <div className="preview-wrap">
@@ -152,7 +226,11 @@ export default function BeautyConciergeApp() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={preview} alt="アップロードした肌写真" className="preview" />
             ) : (
-              <div className="preview placeholder">ここにプレビューが表示されます</div>
+              <div className="preview placeholder">
+                {result
+                  ? "解析後、写真プレビューは破棄済みです"
+                  : "ここにプレビューが表示されます"}
+              </div>
             )}
           </div>
         </div>
@@ -257,7 +335,9 @@ export default function BeautyConciergeApp() {
             <div className="result-head">
               <div>
                 <h2>5. 毎日の成長記録</h2>
-                <p className="muted">同じ日に再保存すると上書きされます（この端末に保存）。</p>
+                <p className="muted">
+                  文章結果のみをこの端末に保存します。写真は保存しません。
+                </p>
               </div>
               <div className="actions">
                 <button type="button" className="btn primary" onClick={saveToday}>

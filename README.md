@@ -8,7 +8,17 @@
 - AI による肌状態コメント、ニキビ予測、ケアレベル表示
 - スキンケア提案 / メイク提案
 - おすすめ化粧品の検索キーワード生成 → 楽天市場 or 検索結果へ誘導
-- 毎日の成長記録（localStorage）
+- 毎日の成長記録（localStorage・文章のみ）
+
+## プライバシー / セキュリティ
+
+- 写真は解析のため一時利用し、サーバーには保存しません
+- 解析後、画面上の写真プレビューを破棄します
+- 送信前に端末内で画像を圧縮します
+- 成長記録に写真は含めません
+- `OPENAI_API_KEY` はサーバー側のみで使用
+- API は Origin チェック・レート制限・同意フラグ必須
+- OpenAI リクエストは `store: false` を指定
 
 ## 注意
 
@@ -29,6 +39,7 @@ npm run dev
 | `OPENAI_API_KEY` | 推奨 | 画像解析と提案に使用。未設定時はデモ結果 |
 | `OPENAI_MODEL` | 任意 | 既定 `gpt-4o-mini` |
 | `RAKUTEN_APP_ID` | 任意 | 設定時は楽天商品APIで実商品を取得。未設定時は検索ページへ誘導 |
+| `NEXT_PUBLIC_APP_URL` | 任意 | 本番URL（Origin許可に使用） |
 
 Vercel では Project Settings → Environment Variables に同じキーを追加し、Redeploy してください。
 

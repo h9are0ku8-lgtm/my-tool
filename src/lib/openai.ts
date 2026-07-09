@@ -49,7 +49,8 @@ export async function analyzeSkinWithOpenAI(
   }
 
   const prompt = `
-あなたは美容アドバイザーです。医療診断は行わず、一般的なスキンケア助言のみを返してください。
+あなたは美容アドバイザーです。医療診断・病名断定・処方は行わず、一般的なスキンケア助言のみを返してください。
+個人を特定できる情報（名前、住所、連絡先など）は出力しないでください。
 入力画像（顔または肌）を見て、次の JSON だけを返してください。説明文やコードフェンスは不要です。
 
 {
@@ -85,11 +86,13 @@ careLevel の目安:
     body: JSON.stringify({
       model: process.env.OPENAI_MODEL || "gpt-4o-mini",
       temperature: 0.4,
+      // Do not store this request in OpenAI for training / dashboard retention where supported
+      store: false,
       messages: [
         {
           role: "system",
           content:
-            "You are a Japanese beauty concierge. Never claim medical diagnosis. Reply with JSON only.",
+            "You are a Japanese beauty concierge. Never claim medical diagnosis. Never output personal identifiers. Reply with JSON only.",
         },
         {
           role: "user",

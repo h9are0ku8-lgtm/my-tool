@@ -311,6 +311,30 @@ a {
   line-height: 1.6;
 }
 
+.privacy-panel {
+  border-color: rgba(196, 91, 108, 0.22);
+  background: linear-gradient(180deg, rgba(255, 247, 244, 0.95), rgba(255, 252, 248, 0.92));
+}
+
+.privacy-list {
+  margin: 0.7rem 0 1rem;
+  padding-left: 1.15rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.consent {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.consent input {
+  margin-top: 0.2rem;
+}
+
 @media (max-width: 860px) {
   .upload-grid,
   .result-head,
