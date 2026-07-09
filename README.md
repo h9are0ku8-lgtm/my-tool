@@ -1,40 +1,37 @@
-# my-tool
+# AI美容コンシェルジュ (my-tool)
 
-日常の開発タスクをシンプルかつ素早くこなすための軽量ツールキットです。
+肌を撮るだけで、肌状態・ニキビ予測・ケアレベル・スキンケア/メイク提案を行い、おすすめ化粧品をECへ誘導する MVP です。毎日の成長記録も端末内に保存できます。
 
-## 概要
+## できること
 
-my-tool は、繰り返しの多い作業を自動化し、開発フローをスムーズにすることを目的としたプロジェクトです。シンプルな構成を保ちながら、実用的な機能を提供します。
+- 肌写真のアップロード / カメラ撮影
+- AI による肌状態コメント、ニキビ予測、ケアレベル表示
+- スキンケア提案 / メイク提案
+- おすすめ化粧品の検索キーワード生成 → 楽天市場 or 検索結果へ誘導
+- 毎日の成長記録（localStorage）
 
-## 機能
+## 注意
 
-- **ランディングページ** (`index.html`) — プロジェクト紹介のシンプルな静的ページ
-- 追加機能は今後順次追加予定
+本アプリは美容目的の一般アドバイスです。医療診断の代替ではありません。
 
-## 使い方
-
-リポジトリをクローンして `index.html` をブラウザで開くだけで動作します。
-
-```bash
-git clone https://github.com/h9are0ku8-lgtm/my-tool.git
-cd my-tool
-open index.html   # macOS の場合
-```
-
-## 開発
+## セットアップ
 
 ```bash
-# ブランチを作成して機能を追加
-git checkout -b feature/your-feature
-
-# 変更をコミット
-git add .
-git commit -m "Add your feature"
-
-# PR を作成
-gh pr create
+npm install
+cp .env.example .env.local
+npm run dev
 ```
 
-## ライセンス
+### 環境変数
 
-MIT
+| Key | 必須 | 説明 |
+|---|---|---|
+| `OPENAI_API_KEY` | 推奨 | 画像解析と提案に使用。未設定時はデモ結果 |
+| `OPENAI_MODEL` | 任意 | 既定 `gpt-4o-mini` |
+| `RAKUTEN_APP_ID` | 任意 | 設定時は楽天商品APIで実商品を取得。未設定時は検索ページへ誘導 |
+
+Vercel では Project Settings → Environment Variables に同じキーを追加し、Redeploy してください。
+
+## デプロイ
+
+GitHub の `main` に push すると、連携済みの Vercel プロジェクトが自動デプロイします。
