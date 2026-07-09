@@ -34,19 +34,32 @@ async function loadImageElement(file: File): Promise<HTMLImageElement> {
   }
 }
 
+async function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
+    reader.readAsDataURL(file);
+  });
+}
+
 async function compressImageFile(file: File): Promise<string> {
   if (!looksLikeImage(file)) {
     throw new Error("画像ファイルを選択してください（JPEG / PNG / WebP）。");
   }
 
+  // Fast path: already small enough JPEG/PNG/WebP can be sent after light validation.
+  const rawDataUrl = await fileToDataUrl(file);
+  const smallEnough = file.size <= 1_200_000;
+
   const canvas = document.createElement("canvas");
   const ctx = canvas.getContext("2d");
   if (!ctx) {
+    if (rawDataUrl.startsWith("data:image/")) return rawDataUrl;
     throw new Error("画像の処理に失敗しました。");
   }
 
   try {
-    // Prefer createImageBitmap, but fall back for picky mobile browsers.
     let width = 0;
     let height = 0;
     let drawable: ImageBitmap | HTMLImageElement | null = null;
@@ -57,13 +70,24 @@ async function compressImageFile(file: File): Promise<string> {
       width = bitmap.width;
       height = bitmap.height;
     } catch {
-      const image = await loadImageElement(file);
-      drawable = image;
-      width = image.naturalWidth || image.width;
-      height = image.naturalHeight || image.height;
+      try {
+        const image = await loadImageElement(file);
+        drawable = image;
+        width = image.naturalWidth || image.width;
+        height = image.naturalHeight || image.height;
+      } catch {
+        // Last resort: use original data URL if browser can read the bytes.
+        if (rawDataUrl.startsWith("data:image/") && smallEnough) {
+          return rawDataUrl;
+        }
+        throw new Error(
+          "この写真はブラウザで展開できませんでした。写真アプリでJPEG保存してから再試行してください。"
+        );
+      }
     }
 
     if (!width || !height) {
+      if (rawDataUrl.startsWith("data:image/") && smallEnough) return rawDataUrl;
       throw new Error("画像サイズを取得できませんでした。");
     }
 
@@ -78,6 +102,7 @@ async function compressImageFile(file: File): Promise<string> {
 
     const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
     if (!dataUrl.startsWith("data:image/jpeg")) {
+      if (rawDataUrl.startsWith("data:image/")) return rawDataUrl;
       throw new Error("画像の変換に失敗しました。");
     }
     return dataUrl;
