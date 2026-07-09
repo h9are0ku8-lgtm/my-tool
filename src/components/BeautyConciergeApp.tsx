@@ -2,115 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AnalyzeResponse, GrowthEntry } from "@/lib/types";
+import { prepareImageForAnalysis } from "@/lib/image";
 import {
   clearGrowthEntries,
   loadGrowthEntries,
   saveGrowthEntry,
   todayKey,
 } from "@/lib/storage";
-
-const MAX_EDGE = 1024;
-const JPEG_QUALITY = 0.72;
-
-function looksLikeImage(file: File): boolean {
-  if (file.type.startsWith("image/")) return true;
-  // Some mobile browsers leave type empty; fall back to extension.
-  return /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i.test(file.name);
-}
-
-async function loadImageElement(file: File): Promise<HTMLImageElement> {
-  const objectUrl = URL.createObjectURL(file);
-  try {
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () =>
-        reject(new Error("この写真形式は読み込めませんでした。JPEG/PNGで再保存して試してください。"));
-      img.src = objectUrl;
-    });
-    return image;
-  } finally {
-    URL.revokeObjectURL(objectUrl);
-  }
-}
-
-async function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("画像の読み込みに失敗しました。"));
-    reader.readAsDataURL(file);
-  });
-}
-
-async function compressImageFile(file: File): Promise<string> {
-  if (!looksLikeImage(file)) {
-    throw new Error("画像ファイルを選択してください（JPEG / PNG / WebP）。");
-  }
-
-  // Fast path: already small enough JPEG/PNG/WebP can be sent after light validation.
-  const rawDataUrl = await fileToDataUrl(file);
-  const smallEnough = file.size <= 1_200_000;
-
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    if (rawDataUrl.startsWith("data:image/")) return rawDataUrl;
-    throw new Error("画像の処理に失敗しました。");
-  }
-
-  try {
-    let width = 0;
-    let height = 0;
-    let drawable: ImageBitmap | HTMLImageElement | null = null;
-
-    try {
-      const bitmap = await createImageBitmap(file);
-      drawable = bitmap;
-      width = bitmap.width;
-      height = bitmap.height;
-    } catch {
-      try {
-        const image = await loadImageElement(file);
-        drawable = image;
-        width = image.naturalWidth || image.width;
-        height = image.naturalHeight || image.height;
-      } catch {
-        // Last resort: use original data URL if browser can read the bytes.
-        if (rawDataUrl.startsWith("data:image/") && smallEnough) {
-          return rawDataUrl;
-        }
-        throw new Error(
-          "この写真はブラウザで展開できませんでした。写真アプリでJPEG保存してから再試行してください。"
-        );
-      }
-    }
-
-    if (!width || !height) {
-      if (rawDataUrl.startsWith("data:image/") && smallEnough) return rawDataUrl;
-      throw new Error("画像サイズを取得できませんでした。");
-    }
-
-    const scale = Math.min(1, MAX_EDGE / Math.max(width, height));
-    canvas.width = Math.max(1, Math.round(width * scale));
-    canvas.height = Math.max(1, Math.round(height * scale));
-    ctx.drawImage(drawable, 0, 0, canvas.width, canvas.height);
-
-    if ("close" in drawable && typeof drawable.close === "function") {
-      drawable.close();
-    }
-
-    const dataUrl = canvas.toDataURL("image/jpeg", JPEG_QUALITY);
-    if (!dataUrl.startsWith("data:image/jpeg")) {
-      if (rawDataUrl.startsWith("data:image/")) return rawDataUrl;
-      throw new Error("画像の変換に失敗しました。");
-    }
-    return dataUrl;
-  } finally {
-    canvas.width = 0;
-    canvas.height = 0;
-  }
-}
 
 function careLevelClass(level: string): string {
   if (level === "attention") return "badge badge-attention";
@@ -144,7 +42,7 @@ export default function BeautyConciergeApp() {
     setResult(null);
     setSavedMessage(null);
     try {
-      const dataUrl = await compressImageFile(file);
+      const dataUrl = await prepareImageForAnalysis(file);
       setPreview(dataUrl);
     } catch (e) {
       setError(e instanceof Error ? e.message : "画像読み込みエラー");
@@ -269,7 +167,7 @@ export default function BeautyConciergeApp() {
               <input
                 ref={inputRef}
                 type="file"
-                accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif,.JPG,.JPEG,.HEIC,.HEIF"
                 hidden
                 onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
               />
@@ -288,7 +186,7 @@ export default function BeautyConciergeApp() {
               )}
             </div>
             <p className="muted">
-              写真ライブラリから選べます。拡張子が png でも中身が JPEG の写真にも対応しています。
+              iPhoneのHEIC/HEIFも含め、スマホ写真を自動でJPEGに変換してから解析します。
             </p>
             {!consent && (
               <p className="muted">診断には上部のプライバシー同意が必要です。</p>
