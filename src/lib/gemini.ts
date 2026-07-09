@@ -102,8 +102,16 @@ export async function analyzeSkinWithGemini(
   }
 
   const preferred = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+  // Try several models because free-tier quotas can differ by model/account.
   const models = Array.from(
-    new Set([preferred, "gemini-2.0-flash", "gemini-1.5-flash", "gemini-2.5-flash"])
+    new Set([
+      preferred,
+      "gemini-2.0-flash",
+      "gemini-2.0-flash-lite",
+      "gemini-1.5-flash",
+      "gemini-1.5-flash-8b",
+      "gemini-2.5-flash",
+    ])
   );
 
   const { mime, base64 } = splitDataUrl(imageDataUrl);
