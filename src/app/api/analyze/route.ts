@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { analyzeSkinWithOpenAI } from "@/lib/openai";
+import { analyzeSkin } from "@/lib/ai";
 import { recommendProducts } from "@/lib/products";
 import {
   checkRateLimit,
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
-    const analysis = await analyzeSkinWithOpenAI(validated.dataUrl);
+    const analysis = await analyzeSkin(validated.dataUrl);
     const products = await recommendProducts(analysis);
 
     const payload: AnalyzeResponse = {
