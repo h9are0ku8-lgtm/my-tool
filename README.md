@@ -10,17 +10,16 @@
 - おすすめ化粧品の検索キーワード生成 → 楽天市場 or 検索結果へ誘導
 - 毎日の成長記録（localStorage・文章のみ）
 
-## AI プロバイダ
+## AI / 無料モード
 
-既定は **Gemini 優先**、失敗時のみ OpenAI にフォールバックします。
+既定は **Gemini 優先** → OpenAI 予備 → **無料ルールモード** の順です。  
+AI枠が切れても、写真の明るさ・赤みなどの簡易特徴から提案を続けます（課金なし）。
 
 | Key | 必須 | 説明 |
 |---|---|---|
-| `GEMINI_API_KEY` | 推奨 | Google AI Studio の APIキー |
-| `GEMINI_MODEL` | 任意 | 既定 `gemini-2.0-flash` |
-| `OPENAI_API_KEY` | 任意 | Gemini 失敗時の予備 |
-| `OPENAI_MODEL` | 任意 | 既定 `gpt-4o-mini` |
-| `AI_PROVIDER` | 任意 | `gemini`（既定）または `openai` |
+| `AI_PROVIDER` | 任意 | `gemini`（既定）/ `openai` / `rules`（常に無料モード） |
+| `GEMINI_API_KEY` | 任意 | あるときだけAI解析 |
+| `OPENAI_API_KEY` | 任意 | Gemini失敗時の予備（`sk-` 形式） |
 | `RAKUTEN_APP_ID` | 任意 | 楽天商品API |
 | `NEXT_PUBLIC_APP_URL` | 任意 | Origin許可用の本番URL |
 

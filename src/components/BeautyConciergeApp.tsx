@@ -124,7 +124,7 @@ export default function BeautyConciergeApp() {
         <h1>撮るだけで、今日の肌とケアがわかる</h1>
         <p className="lede">
           肌写真から状態・ニキビ予測・ケアレベル・スキンケア/メイク提案まで。
-          おすすめ化粧品はECへ誘導して探せます。毎日の成長も記録できます。
+          AI枠がなくても無料ルールモードで提案が続きます。おすすめ化粧品はECへ誘導できます。
         </p>
       </header>
 
@@ -135,6 +135,7 @@ export default function BeautyConciergeApp() {
           <li>解析後、画面上の写真プレビューもすぐ破棄します。</li>
           <li>成長記録には文章結果のみを端末内保存し、写真は含めません。</li>
           <li>APIキーはサーバー側のみで扱い、ブラウザには出しません。</li>
+          <li>AI枠が使えない場合は、課金なしのルールベース提案に自動切替します。</li>
           <li>本サービスは美容アドバイスであり、医療診断ではありません。</li>
         </ul>
         <label className="consent">
@@ -177,7 +178,7 @@ export default function BeautyConciergeApp() {
                 disabled={!preview || loading || !consent}
                 onClick={analyze}
               >
-                {loading ? "解析中..." : "AI診断する"}
+                {loading ? "解析中..." : "診断する"}
               </button>
               {preview && (
                 <button type="button" className="btn ghost" onClick={clearPreview}>
@@ -214,6 +215,10 @@ export default function BeautyConciergeApp() {
             <div className="result-head">
               <div>
                 <h2>2. 今日の肌診断</h2>
+                <p className="mode-pill">
+                  判定モード: {result.modeLabel}
+                  {result.mode === "rules" ? "（無料・API課金なし）" : ""}
+                </p>
                 <p className="summary">{result.analysis.summary}</p>
               </div>
               <div className="score-card">

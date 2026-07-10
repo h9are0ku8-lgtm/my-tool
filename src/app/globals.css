@@ -335,6 +335,17 @@ a {
   margin-top: 0.2rem;
 }
 
+.mode-pill {
+  display: inline-flex;
+  margin: 0.35rem 0 0.7rem;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  background: #eef6f1;
+  color: var(--sage);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
 @media (max-width: 860px) {
   .upload-grid,
   .result-head,

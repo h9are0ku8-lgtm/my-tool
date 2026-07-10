@@ -1,6 +1,6 @@
-import { fallbackAnalysis } from "./analysis";
 import { analyzeSkinWithGemini } from "./gemini";
 import { parseSkinAnalysisText, SKIN_ANALYSIS_PROMPT } from "./prompt";
+import { analyzeSkinWithRules } from "./rules";
 import type { SkinAnalysis } from "./types";
 
 type OpenAIContentPart =
@@ -18,6 +18,12 @@ type OpenAIResponse = {
   };
 };
 
+export type AnalyzeSkinResult = {
+  analysis: SkinAnalysis;
+  mode: "ai" | "rules";
+  modeLabel: string;
+};
+
 async function analyzeSkinWithOpenAI(
   imageDataUrl: string
 ): Promise<{ ok: true; analysis: SkinAnalysis } | { ok: false; reason: string }> {
@@ -26,7 +32,6 @@ async function analyzeSkinWithOpenAI(
     return { ok: false, reason: "OPENAI_API_KEY 未設定" };
   }
 
-  // Guard against accidentally pasting a Gemini/Google key into OPENAI_API_KEY.
   if (!apiKey.startsWith("sk-")) {
     return {
       ok: false,
@@ -81,49 +86,83 @@ async function analyzeSkinWithOpenAI(
   }
 }
 
-function friendlyFailureMessage(geminiReason: string, openaiReason: string): string {
-  const geminiQuota =
-    /quota|rate.?limit|exceeded/i.test(geminiReason) ||
-    geminiReason.includes("limit: 0");
-  const openaiBadKey =
-    /Incorrect API key|形式が不正|sk-/i.test(openaiReason) ||
-    openaiReason.includes("OPENAI_API_KEY");
-
-  if (geminiQuota && openaiBadKey) {
-    return [
-      "AI解析に失敗したためデモ結果を表示しています。",
-      "原因: Geminiの無料枠が上限です。加えて OpenAI キーが不正（Geminiキーが混入している可能性）です。",
-      "対処: Google AI Studio で課金/枠を確認するか、別の Gemini キーを使う。OpenAI を使うなら sk- で始まるキーを OPENAI_API_KEY に設定してください。",
-    ].join(" ");
-  }
-
-  if (geminiQuota) {
-    return `AI解析に失敗したためデモ結果を表示しています。Geminiの利用枠が上限です（約1分後に再試行、または課金設定を確認）。詳細: ${geminiReason}`;
-  }
-
-  return `AI解析に失敗したためデモ結果を表示しています（Gemini: ${geminiReason} / OpenAI: ${openaiReason}）。`;
+function withRulesNote(analysis: SkinAnalysis, reason: string): SkinAnalysis {
+  return {
+    ...analysis,
+    summary: `${analysis.summary}（無料ルールモード: AI枠が使えないため切替。${reason}）`,
+  };
 }
 
-export async function analyzeSkin(imageDataUrl: string): Promise<SkinAnalysis> {
-  const provider = (process.env.AI_PROVIDER || "gemini").toLowerCase();
+/**
+ * Prefer AI when available. If quota/keys fail, fall back to free rule-based analysis
+ * so the product keeps working without paid usage.
+ */
+export async function analyzeSkin(imageDataUrl: string): Promise<AnalyzeSkinResult> {
+  const forceRules = (process.env.AI_PROVIDER || "").toLowerCase() === "rules";
+  if (forceRules) {
+    return {
+      analysis: analyzeSkinWithRules(imageDataUrl),
+      mode: "rules",
+      modeLabel: "無料ルールモード",
+    };
+  }
 
+  const provider = (process.env.AI_PROVIDER || "gemini").toLowerCase();
   const tryGeminiFirst = provider !== "openai";
 
   if (tryGeminiFirst) {
     const gemini = await analyzeSkinWithGemini(imageDataUrl);
-    if (gemini.ok) return gemini.analysis;
+    if (gemini.ok) {
+      return {
+        analysis: gemini.analysis,
+        mode: "ai",
+        modeLabel: "Gemini AI",
+      };
+    }
 
     const openai = await analyzeSkinWithOpenAI(imageDataUrl);
-    if (openai.ok) return openai.analysis;
+    if (openai.ok) {
+      return {
+        analysis: openai.analysis,
+        mode: "ai",
+        modeLabel: "OpenAI",
+      };
+    }
 
-    return fallbackAnalysis(friendlyFailureMessage(gemini.reason, openai.reason));
+    return {
+      analysis: withRulesNote(
+        analyzeSkinWithRules(imageDataUrl),
+        "Gemini/OpenAI利用不可"
+      ),
+      mode: "rules",
+      modeLabel: "無料ルールモード",
+    };
   }
 
   const openai = await analyzeSkinWithOpenAI(imageDataUrl);
-  if (openai.ok) return openai.analysis;
+  if (openai.ok) {
+    return {
+      analysis: openai.analysis,
+      mode: "ai",
+      modeLabel: "OpenAI",
+    };
+  }
 
   const gemini = await analyzeSkinWithGemini(imageDataUrl);
-  if (gemini.ok) return gemini.analysis;
+  if (gemini.ok) {
+    return {
+      analysis: gemini.analysis,
+      mode: "ai",
+      modeLabel: "Gemini AI",
+    };
+  }
 
-  return fallbackAnalysis(friendlyFailureMessage(gemini.reason, openai.reason));
+  return {
+    analysis: withRulesNote(
+      analyzeSkinWithRules(imageDataUrl),
+      "OpenAI/Gemini利用不可"
+    ),
+    mode: "rules",
+    modeLabel: "無料ルールモード",
+  };
 }

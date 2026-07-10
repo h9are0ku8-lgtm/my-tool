@@ -12,7 +12,7 @@ import type { AnalyzeResponse } from "@/lib/types";
 export const runtime = "nodejs";
 
 const DISCLAIMER =
-  "本サービスは美容目的の一般的なアドバイスです。医療診断・治療の代替にはなりません。気になる症状がある場合は皮膚科などの専門家にご相談ください。画像は解析処理のため一時的に利用し、サーバーには保存しません。";
+  "本サービスは美容目的の一般的なアドバイスです。医療診断・治療の代替にはなりません。気になる症状がある場合は皮膚科などの専門家にご相談ください。画像は解析処理のため一時的に利用し、サーバーには保存しません。AI枠が使えない場合は無料ルールモードに自動切替します。";
 
 export async function POST(request: Request) {
   try {
@@ -58,13 +58,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validated.error }, { status: 400 });
     }
 
-    const analysis = await analyzeSkin(validated.dataUrl);
+    const { analysis, mode, modeLabel } = await analyzeSkin(validated.dataUrl);
     const products = await recommendProducts(analysis);
 
     const payload: AnalyzeResponse = {
       analysis,
       products,
       disclaimer: DISCLAIMER,
+      mode,
+      modeLabel,
     };
 
     return NextResponse.json(payload, {

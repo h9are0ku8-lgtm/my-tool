@@ -30,6 +30,8 @@ export type AnalyzeResponse = {
   analysis: SkinAnalysis;
   products: ProductRecommendation[];
   disclaimer: string;
+  mode: "ai" | "rules";
+  modeLabel: string;
 };
 
 export type GrowthEntry = {
