@@ -186,9 +186,6 @@ export default function BeautyConciergeApp() {
                 </button>
               )}
             </div>
-            <p className="muted">
-              iPhoneのHEIC/HEIFも含め、スマホ写真を自動でJPEGに変換してから解析します。
-            </p>
             {!consent && (
               <p className="muted">診断には上部のプライバシー同意が必要です。</p>
             )}
