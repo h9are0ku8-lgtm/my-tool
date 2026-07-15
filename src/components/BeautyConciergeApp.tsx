@@ -162,50 +162,37 @@ export default function BeautyConciergeApp() {
     inputRef.current?.click();
   }
 
+  function startDiagnosis() {
+    document.getElementById("upload-section")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+    window.setTimeout(() => pickPhoto(), 280);
+  }
+
   return (
     <div className="page">
-      <header className="hero">
+      <header className="hero compact-hero">
         <p className="eyebrow">AI Beauty Concierge</p>
         <h1>撮るだけで、今日の肌とケアがわかる</h1>
-        <p className="lede">
-          肌写真から状態・ケア提案・成分のヒントまで。毎日のスコアが積み重なって、続けたくなる記録になります。
-        </p>
+        <p className="hero-sub">約5秒でAI診断</p>
+        <button type="button" className="btn primary" onClick={startDiagnosis}>
+          診断を始める
+        </button>
       </header>
 
-      <section className="start-card panel">
-        <div className="start-card-inner">
-          <div>
-            <p className="start-kicker">📷 今日の肌をチェック！</p>
-            <h2 className="start-title">約5秒で診断</h2>
-            <p className="start-lead">AIが今日のケアを提案</p>
-            <ul className="start-points">
-              <li>一目でわかる潤い・毛穴・ニキビ指標</li>
-              <li>毎日変わる今日の肌ラベル</li>
-              <li>続けて楽しいスコア記録</li>
-            </ul>
-            <div className="actions">
-              <button type="button" className="btn primary" onClick={pickPhoto}>
-                写真を選んで始める
-              </button>
-            </div>
-          </div>
-          <div className="start-visual" aria-hidden="true">
-            <span className="start-score-demo">75</span>
-            <span className="start-score-label">今日の肌スコア</span>
-          </div>
-        </div>
-      </section>
-
-      <section className="panel privacy-panel">
-        <h2>プライバシーと安全について</h2>
-        <ul className="privacy-list">
-          <li>写真は解析のためだけに一時利用し、サーバーには保存しません。</li>
-          <li>解析後、画面上の写真プレビューもすぐ破棄します。</li>
-          <li>成長記録には文章結果のみを端末内保存し、写真は含めません。</li>
-          <li>APIキーはサーバー側のみで扱い、ブラウザには出しません。</li>
-          <li>AI枠が使えない場合は、課金なしのルールベース提案に自動切替します。</li>
-          <li>本サービスは美容アドバイスであり、医療診断ではありません。</li>
-        </ul>
+      <section className="panel privacy-panel compact-privacy">
+        <details>
+          <summary>プライバシーと安全について（同意が必要です）</summary>
+          <ul className="privacy-list">
+            <li>写真は解析のためだけに一時利用し、サーバーには保存しません。</li>
+            <li>解析後、画面上の写真プレビューもすぐ破棄します。</li>
+            <li>成長記録には文章結果のみを端末内保存し、写真は含めません。</li>
+            <li>APIキーはサーバー側のみで扱い、ブラウザには出しません。</li>
+            <li>AI枠が使えない場合は、課金なしのルールベース提案に自動切替します。</li>
+            <li>本サービスは美容アドバイスであり、医療診断ではありません。</li>
+          </ul>
+        </details>
         <label className="consent">
           <input
             type="checkbox"
@@ -218,7 +205,7 @@ export default function BeautyConciergeApp() {
         </label>
       </section>
 
-      <section className="panel">
+      <section className="panel" id="upload-section">
         <div className="upload-grid">
           <div>
             <h2>1. 肌を撮る / アップロード</h2>

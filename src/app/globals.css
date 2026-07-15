@@ -44,27 +44,37 @@ a {
 .page {
   width: min(980px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 2.5rem 0 4rem;
+  padding: 1.25rem 0 3rem;
 }
 
 .hero {
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.85rem;
 }
 
-.eyebrow {
-  margin: 0 0 0.6rem;
-  color: var(--rose);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-size: 0.78rem;
-  font-weight: 700;
+.compact-hero {
+  text-align: left;
+}
+
+.compact-hero .eyebrow {
+  margin-bottom: 0.35rem;
 }
 
 .hero h1 {
   margin: 0;
-  font-size: clamp(1.8rem, 4vw, 2.7rem);
-  line-height: 1.25;
+  font-size: clamp(1.45rem, 3.6vw, 2rem);
+  line-height: 1.3;
   letter-spacing: -0.03em;
+}
+
+.hero-sub {
+  margin: 0.4rem 0 0.75rem;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+
+.compact-hero .btn {
+  margin-top: 0.1rem;
 }
 
 .lede {
@@ -72,6 +82,29 @@ a {
   max-width: 42rem;
   color: var(--muted);
   line-height: 1.7;
+}
+
+.compact-privacy {
+  padding: 0.85rem 1.1rem;
+}
+
+.compact-privacy details {
+  margin-bottom: 0.65rem;
+}
+
+.compact-privacy summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--rose-deep);
+  list-style: none;
+}
+
+.compact-privacy summary::-webkit-details-marker {
+  display: none;
+}
+
+.compact-privacy .privacy-list {
+  margin-top: 0.55rem;
 }
 
 .panel {
