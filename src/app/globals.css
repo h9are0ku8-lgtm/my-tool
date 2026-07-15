@@ -55,6 +55,15 @@ a {
   text-align: left;
 }
 
+.eyebrow {
+  margin: 0 0 0.35rem;
+  color: var(--rose);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .compact-hero .eyebrow {
   margin-bottom: 0.35rem;
 }
