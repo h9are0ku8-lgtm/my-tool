@@ -250,7 +250,7 @@ export function deriveBadges(
   let streak = 0;
   if (sorted.length > 0) {
     const newest = [...entries].sort((a, b) => b.date.localeCompare(a.date));
-    let cursor = new Date(`${newest[0].date}T12:00:00`);
+    const cursor = new Date(`${newest[0].date}T12:00:00`);
     for (const e of newest) {
       const key = cursor.toISOString().slice(0, 10);
       if (e.date === key) {
