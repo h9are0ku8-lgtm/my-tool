@@ -9,6 +9,16 @@ import {
   saveGrowthEntry,
   todayKey,
 } from "@/lib/storage";
+import {
+  chartScores,
+  deriveBadges,
+  deriveCoachComment,
+  deriveDailyLabels,
+  deriveIngredients,
+  deriveMetrics,
+  starsDisplay,
+  weekSeries,
+} from "@/lib/metrics";
 
 function careLevelClass(level: string): string {
   if (level === "attention") return "badge badge-attention";
@@ -35,6 +45,35 @@ export default function BeautyConciergeApp() {
     if (entries.length < 2) return null;
     return entries[0].score - entries[1].score;
   }, [entries]);
+
+  const metrics = useMemo(
+    () => (result ? deriveMetrics(result.analysis) : []),
+    [result]
+  );
+  const dailyLabels = useMemo(
+    () => (result ? deriveDailyLabels(result.analysis) : []),
+    [result]
+  );
+  const ingredients = useMemo(
+    () => (result ? deriveIngredients(result.analysis) : []),
+    [result]
+  );
+  const coach = useMemo(
+    () => (result ? deriveCoachComment(result.analysis) : null),
+    [result]
+  );
+  const badges = useMemo(
+    () => deriveBadges(entries, result?.analysis ?? null),
+    [entries, result]
+  );
+  const week = useMemo(() => weekSeries(entries), [entries]);
+  const sparkScores = useMemo(() => {
+    const base = chartScores(entries, 7);
+    if (result && !entries.some((e) => e.date === todayKey())) {
+      return [...base, result.analysis.score];
+    }
+    return base.length ? base : result ? [result.analysis.score] : [];
+  }, [entries, result]);
 
   async function onFileChange(file: File | null) {
     if (!file) return;
@@ -69,7 +108,6 @@ export default function BeautyConciergeApp() {
     setError(null);
     setSavedMessage(null);
 
-    // Keep a local copy only for this request, then wipe UI preview ASAP after send
     const imageForRequest = preview;
 
     try {
@@ -86,7 +124,6 @@ export default function BeautyConciergeApp() {
         throw new Error(data.error || "解析に失敗しました");
       }
       setResult(data as AnalyzeResponse);
-      // Do not keep the face image in UI/memory longer than needed
       clearPreview();
     } catch (e) {
       setError(e instanceof Error ? e.message : "解析に失敗しました");
@@ -117,16 +154,43 @@ export default function BeautyConciergeApp() {
     setSavedMessage("記録をクリアしました。");
   }
 
+  function pickPhoto() {
+    inputRef.current?.click();
+  }
+
   return (
     <div className="page">
       <header className="hero">
         <p className="eyebrow">AI Beauty Concierge</p>
         <h1>撮るだけで、今日の肌とケアがわかる</h1>
         <p className="lede">
-          肌写真から状態・ニキビ予測・ケアレベル・スキンケア/メイク提案まで。
-          AI枠がなくても無料ルールモードで提案が続きます。おすすめ化粧品はECへ誘導できます。
+          肌写真から状態・ケア提案・成分のヒントまで。毎日のスコアが積み重なって、続けたくなる記録になります。
         </p>
       </header>
+
+      <section className="start-card panel">
+        <div className="start-card-inner">
+          <div>
+            <p className="start-kicker">📷 今日の肌をチェック！</p>
+            <h2 className="start-title">約5秒で診断</h2>
+            <p className="start-lead">AIが今日のケアを提案</p>
+            <ul className="start-points">
+              <li>一目でわかる潤い・毛穴・ニキビ指標</li>
+              <li>毎日変わる今日の肌ラベル</li>
+              <li>続けて楽しいスコア記録</li>
+            </ul>
+            <div className="actions">
+              <button type="button" className="btn primary" onClick={pickPhoto}>
+                写真を選んで始める
+              </button>
+            </div>
+          </div>
+          <div className="start-visual" aria-hidden="true">
+            <span className="start-score-demo">75</span>
+            <span className="start-score-label">今日の肌スコア</span>
+          </div>
+        </div>
+      </section>
 
       <section className="panel privacy-panel">
         <h2>プライバシーと安全について</h2>
@@ -158,11 +222,7 @@ export default function BeautyConciergeApp() {
               送信前に端末内で圧縮します。解析後はプレビューを自動削除します。
             </p>
             <div className="actions">
-              <button
-                type="button"
-                className="btn primary"
-                onClick={() => inputRef.current?.click()}
-              >
+              <button type="button" className="btn primary" onClick={pickPhoto}>
                 写真を選ぶ
               </button>
               <input
@@ -206,8 +266,21 @@ export default function BeautyConciergeApp() {
         </div>
       </section>
 
-      {result && (
+      {result && coach && (
         <>
+          <section className="panel coach-panel">
+            <h2>今日の肌コメント</h2>
+            <p className="coach-headline">{coach.headline}</p>
+            <p className="coach-body">{coach.body}</p>
+            <div className="daily-labels">
+              {dailyLabels.map((label) => (
+                <span key={label.text} className="daily-label">
+                  {label.emoji} {label.text}
+                </span>
+              ))}
+            </div>
+          </section>
+
           <section className="panel">
             <div className="result-head">
               <div>
@@ -225,6 +298,18 @@ export default function BeautyConciergeApp() {
                   {result.analysis.careLevelLabel}
                 </span>
               </div>
+            </div>
+
+            <div className="metric-grid">
+              {metrics.map((m) => (
+                <article key={m.key} className="metric-card">
+                  <span className="metric-emoji">{m.emoji}</span>
+                  <strong>{m.label}</strong>
+                  <span className="metric-stars" aria-label={`${m.stars}つ星`}>
+                    {starsDisplay(m.stars)}
+                  </span>
+                </article>
+              ))}
             </div>
 
             <div className="cards">
@@ -272,10 +357,19 @@ export default function BeautyConciergeApp() {
           </section>
 
           <section className="panel">
-            <h2>4. おすすめ化粧品（ECへ誘導）</h2>
+            <h2>4. おすすめ成分 → 商品</h2>
             <p className="muted">
-              肌状態から検索キーワードを作り、楽天市場（API設定時）または検索結果へ案内します。
+              まずは今日の肌に合いそうな成分から。納得してから商品をチェックできます。
             </p>
+            <ul className="ingredient-list">
+              {ingredients.map((ing) => (
+                <li key={ing.name}>
+                  <strong>✔ {ing.name}</strong>
+                  <span>{ing.why}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="ingredient-bridge">↓ その成分が入った商品</p>
             <div className="product-grid">
               {result.products.map((product) => (
                 <article key={product.id} className="product-card">
@@ -327,10 +421,50 @@ export default function BeautyConciergeApp() {
               <p className="muted">
                 直近スコア: {latestScore}
                 {scoreTrend !== null && (
-                  <>（前回比 {scoreTrend >= 0 ? "+" : ""}{scoreTrend}）</>
+                  <>
+                    （前回比 {scoreTrend >= 0 ? "+" : ""}
+                    {scoreTrend}）
+                  </>
                 )}
               </p>
             )}
+
+            <div className="growth-chart-wrap">
+              <p className="chart-title">📈 スコアの推移</p>
+              {sparkScores.length > 0 ? (
+                <ScoreSparkline scores={sparkScores} />
+              ) : (
+                <p className="muted">記録するとグラフが育ちます。</p>
+              )}
+            </div>
+
+            <div className="week-board">
+              <p className="chart-title">一週間の変化</p>
+              <ol className="week-row">
+                {week.map((d) => (
+                  <li key={d.key}>
+                    <span>{d.label}</span>
+                    <strong>{d.score ?? "—"}</strong>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {badges.length > 0 && (
+              <div className="badge-board">
+                <p className="chart-title">バッジ</p>
+                <ul className="badge-row">
+                  {badges.map((b) => (
+                    <li key={b.id}>
+                      <span className="badge-emoji">{b.emoji}</span>
+                      <strong>{b.title}</strong>
+                      <span>{b.desc}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <div className="history">
               {entries.length === 0 && <p className="muted">まだ記録がありません。</p>}
               {entries.map((entry) => (
@@ -340,7 +474,9 @@ export default function BeautyConciergeApp() {
                     <span className="muted"> / スコア {entry.score}</span>
                   </div>
                   <p>{entry.summary}</p>
-                  <p className="muted">{entry.careLevelLabel} — {entry.dailyTip}</p>
+                  <p className="muted">
+                    {entry.careLevelLabel} — {entry.dailyTip}
+                  </p>
                 </article>
               ))}
             </div>
@@ -349,6 +485,53 @@ export default function BeautyConciergeApp() {
           <p className="disclaimer">{result.disclaimer}</p>
         </>
       )}
+    </div>
+  );
+}
+
+function ScoreSparkline({ scores }: { scores: number[] }) {
+  const w = 320;
+  const h = 96;
+  const pad = 12;
+  const min = Math.min(...scores, 50);
+  const max = Math.max(...scores, 90);
+  const span = Math.max(1, max - min);
+  const points = scores.map((s, i) => {
+    const x =
+      pad + (scores.length === 1 ? w / 2 - pad : (i / (scores.length - 1)) * (w - pad * 2));
+    const y = h - pad - ((s - min) / span) * (h - pad * 2);
+    return `${x},${y}`;
+  });
+  const polyline = points.join(" ");
+
+  return (
+    <div className="sparkline">
+      <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="スコア推移グラフ">
+        <polyline
+          fill="none"
+          stroke="#c45b6c"
+          strokeWidth="3"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          points={polyline}
+        />
+        {scores.map((s, i) => {
+          const [x, y] = points[i].split(",").map(Number);
+          return (
+            <g key={`${s}-${i}`}>
+              <circle cx={x} cy={y} r="4.5" fill="#9e3f52" />
+              <text x={x} y={y - 8} textAnchor="middle" className="spark-label">
+                {s}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <div className="spark-caption">
+        {scores.map((s, i) => (
+          <span key={`${s}-${i}`}>{s}</span>
+        ))}
+      </div>
     </div>
   );
 }

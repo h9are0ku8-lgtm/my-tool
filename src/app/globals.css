@@ -355,3 +355,275 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+/* —— UX改善: スタートカード / 指標 / グラフ / バッジ —— */
+.start-card {
+  border-color: rgba(196, 91, 108, 0.28);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 244, 240, 0.98),
+    rgba(255, 252, 248, 0.95) 55%,
+    rgba(231, 240, 230, 0.7)
+  );
+}
+
+.start-card-inner {
+  display: grid;
+  grid-template-columns: 1.4fr 0.8fr;
+  gap: 1rem;
+  align-items: center;
+}
+
+.start-kicker {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--rose-deep);
+}
+
+.start-title {
+  margin: 0.35rem 0 0.2rem !important;
+  font-size: clamp(1.5rem, 3vw, 2rem) !important;
+}
+
+.start-lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 1.05rem;
+}
+
+.start-points {
+  margin: 0.85rem 0 1rem;
+  padding-left: 1.1rem;
+  color: var(--ink);
+  line-height: 1.7;
+}
+
+.start-visual {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  border-radius: 24px;
+  background: radial-gradient(circle at 40% 30%, #f8d9cf, #fff8f4 70%);
+  border: 1px solid rgba(196, 91, 108, 0.18);
+}
+
+.start-score-demo {
+  font-size: 3.2rem;
+  font-weight: 800;
+  color: var(--rose-deep);
+  line-height: 1;
+}
+
+.start-score-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+.coach-panel {
+  border-color: rgba(95, 125, 107, 0.28);
+  background: linear-gradient(180deg, rgba(238, 246, 241, 0.95), var(--card));
+}
+
+.coach-headline {
+  margin: 0.4rem 0 0.35rem;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.coach-body {
+  margin: 0;
+  line-height: 1.7;
+  color: var(--ink);
+}
+
+.daily-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.9rem;
+}
+
+.daily-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid var(--line);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 1rem;
+}
+
+.metric-card {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.75rem 0.55rem;
+  text-align: center;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.metric-emoji {
+  font-size: 1.25rem;
+}
+
+.metric-stars {
+  color: var(--amber);
+  letter-spacing: 0.04em;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.ingredient-list {
+  list-style: none;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.ingredient-list li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 14px;
+  background: rgba(238, 246, 241, 0.7);
+  border: 1px solid rgba(95, 125, 107, 0.18);
+}
+
+.ingredient-list span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.ingredient-bridge {
+  margin: 1rem 0 0.7rem;
+  text-align: center;
+  font-weight: 800;
+  color: var(--rose-deep);
+}
+
+.growth-chart-wrap,
+.week-board,
+.badge-board {
+  margin-top: 1rem;
+  padding: 0.9rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--line);
+}
+
+.chart-title {
+  margin: 0 0 0.55rem;
+  font-weight: 800;
+}
+
+.sparkline svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.spark-label {
+  fill: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.spark-caption {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.3rem;
+  margin-top: 0.35rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.week-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.week-row li {
+  text-align: center;
+  padding: 0.45rem 0.2rem;
+  border-radius: 12px;
+  background: rgba(247, 241, 234, 0.9);
+}
+
+.week-row span {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.week-row strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1rem;
+}
+
+.badge-row {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.55rem;
+}
+
+.badge-row li {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.7rem;
+  border-radius: 14px;
+  background: linear-gradient(160deg, #fff7f4, #ffffff);
+  border: 1px solid rgba(196, 91, 108, 0.16);
+}
+
+.badge-emoji {
+  font-size: 1.25rem;
+}
+
+.badge-row span:last-child {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+@media (max-width: 860px) {
+  .start-card-inner,
+  .metric-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .metric-grid,
+  .week-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .week-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .start-card-inner {
+    grid-template-columns: 1fr;
+  }
+}
