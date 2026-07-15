@@ -35,6 +35,8 @@ export default function BeautyConciergeApp() {
   const [entries, setEntries] = useState<GrowthEntry[]>([]);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [productsOpen, setProductsOpen] = useState(false);
 
   useEffect(() => {
     setEntries(loadGrowthEntries());
@@ -124,6 +126,8 @@ export default function BeautyConciergeApp() {
         throw new Error(data.error || "解析に失敗しました");
       }
       setResult(data as AnalyzeResponse);
+      setDetailOpen(false);
+      setProductsOpen(false);
       clearPreview();
     } catch (e) {
       setError(e instanceof Error ? e.message : "解析に失敗しました");
@@ -268,10 +272,34 @@ export default function BeautyConciergeApp() {
 
       {result && coach && (
         <>
-          <section className="panel coach-panel">
-            <h2>今日の肌コメント</h2>
-            <p className="coach-headline">{coach.headline}</p>
-            <p className="coach-body">{coach.body}</p>
+          <section className="panel diagnosis-hero">
+            <p className="diagnosis-kicker">🌸 今日の診断</p>
+            <div className="diagnosis-score-row">
+              <strong className="diagnosis-score">{result.analysis.score}</strong>
+              <span className="diagnosis-score-unit">点 😊</span>
+            </div>
+            <p className="diagnosis-mood">
+              {moodLine(result.analysis.score, metrics)}
+            </p>
+            <p className="diagnosis-tip">{coach.body}</p>
+
+            <hr className="diagnosis-rule" />
+
+            <ul className="diagnosis-metrics">
+              {metrics.map((m) => (
+                <li key={m.key}>
+                  <span className="metric-emoji" aria-hidden="true">
+                    {m.emoji}
+                  </span>
+                  <span className="metric-name">{m.label}</span>
+                  <span className="metric-stars" aria-label={`${m.stars}つ星`}>
+                    {starsDisplay(m.stars)}
+                  </span>
+                  <span className="metric-mark">{markFromStars(m.stars)}</span>
+                </li>
+              ))}
+            </ul>
+
             <div className="daily-labels">
               {dailyLabels.map((label) => (
                 <span key={label.text} className="daily-label">
@@ -279,130 +307,128 @@ export default function BeautyConciergeApp() {
                 </span>
               ))}
             </div>
-          </section>
 
-          <section className="panel">
-            <div className="result-head">
-              <div>
-                <h2>2. 今日の肌診断</h2>
-                <p className="mode-pill">
-                  判定モード: {result.modeLabel}
-                  {result.mode === "rules" ? "（無料・API課金なし）" : ""}
-                </p>
-                <p className="summary">{result.analysis.summary}</p>
-              </div>
-              <div className="score-card">
-                <span className="score-label">肌スコア</span>
-                <strong className="score">{result.analysis.score}</strong>
-                <span className={careLevelClass(result.analysis.careLevel)}>
-                  {result.analysis.careLevelLabel}
-                </span>
-              </div>
-            </div>
-
-            <div className="metric-grid">
-              {metrics.map((m) => (
-                <article key={m.key} className="metric-card">
-                  <span className="metric-emoji">{m.emoji}</span>
-                  <strong>{m.label}</strong>
-                  <span className="metric-stars" aria-label={`${m.stars}つ星`}>
-                    {starsDisplay(m.stars)}
-                  </span>
-                </article>
-              ))}
-            </div>
-
-            <div className="cards">
-              <article className="card">
-                <h3>肌の状態</h3>
-                <p>{result.analysis.skinCondition}</p>
-                <ul>
-                  {result.analysis.concerns.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </article>
-              <article className="card">
-                <h3>ニキビ予測</h3>
-                <p>{result.analysis.acnePrediction}</p>
-              </article>
-              <article className="card">
-                <h3>ケアレベル</h3>
-                <p>{result.analysis.careLevelNote}</p>
-                <p className="tip">{result.analysis.dailyTip}</p>
-              </article>
-            </div>
-          </section>
-
-          <section className="panel">
-            <h2>3. スキンケア / メイク提案</h2>
-            <div className="cards two">
-              <article className="card">
-                <h3>スキンケア</h3>
-                <ol>
-                  {result.analysis.skincare.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ol>
-              </article>
-              <article className="card">
-                <h3>メイク</h3>
-                <ol>
-                  {result.analysis.makeup.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ol>
-              </article>
-            </div>
-          </section>
-
-          <section className="panel">
-            <h2>4. おすすめ成分 → 商品</h2>
-            <p className="muted">
-              まずは今日の肌に合いそうな成分から。納得してから商品をチェックできます。
+            <p className="mode-pill compact">
+              判定モード: {result.modeLabel}
+              {result.mode === "rules" ? "（無料）" : ""}
             </p>
+
+            <button
+              type="button"
+              className="btn ghost detail-toggle"
+              onClick={() => setDetailOpen((v) => !v)}
+              aria-expanded={detailOpen}
+            >
+              {detailOpen ? "詳細を閉じる" : "詳しく見る"}
+            </button>
+
+            {detailOpen && (
+              <div className="detail-expand">
+                <p className="summary">{result.analysis.summary}</p>
+                <div className="cards">
+                  <article className="card">
+                    <h3>🧴 肌の状態</h3>
+                    <p>{result.analysis.skinCondition}</p>
+                    <ul>
+                      {result.analysis.concerns.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </article>
+                  <article className="card">
+                    <h3>😊 ニキビ予測</h3>
+                    <p>{result.analysis.acnePrediction}</p>
+                  </article>
+                  <article className="card">
+                    <h3>🌿 ケアレベル</h3>
+                    <p>{result.analysis.careLevelNote}</p>
+                    <p className="tip">{result.analysis.dailyTip}</p>
+                    <span className={careLevelClass(result.analysis.careLevel)}>
+                      {result.analysis.careLevelLabel}
+                    </span>
+                  </article>
+                </div>
+
+                <h3 className="sub-heading">スキンケア / メイク</h3>
+                <div className="cards two">
+                  <article className="card">
+                    <h3>💧 スキンケア</h3>
+                    <ol>
+                      {result.analysis.skincare.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ol>
+                  </article>
+                  <article className="card">
+                    <h3>✨ メイク</h3>
+                    <ol>
+                      {result.analysis.makeup.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ol>
+                  </article>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <section className="panel">
+            <h2>おすすめ成分</h2>
+            <p className="muted">売り込みではなく、今日の肌に合いそうな成分のヒントです。</p>
             <ul className="ingredient-list">
               {ingredients.map((ing) => (
                 <li key={ing.name}>
                   <strong>✔ {ing.name}</strong>
+                  <span className="ingredient-why-label">おすすめ理由</span>
                   <span>{ing.why}</span>
                 </li>
               ))}
             </ul>
-            <p className="ingredient-bridge">↓ その成分が入った商品</p>
-            <div className="product-grid">
-              {result.products.map((product) => (
-                <article key={product.id} className="product-card">
-                  {product.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={product.imageUrl} alt="" className="product-image" />
-                  ) : (
-                    <div className="product-image placeholder">EC</div>
-                  )}
-                  <div className="product-body">
-                    <h3>{product.name}</h3>
-                    <p className="muted">
-                      {product.shop} / {product.price}
-                    </p>
-                    <p>{product.reason}</p>
-                    <a
-                      className="btn primary small"
-                      href={product.url}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      ECで見る
-                    </a>
-                  </div>
-                </article>
-              ))}
-            </div>
+            <button
+              type="button"
+              className="btn primary ingredient-cta"
+              onClick={() => setProductsOpen((v) => !v)}
+              aria-expanded={productsOpen}
+            >
+              {productsOpen
+                ? "商品一覧を閉じる"
+                : "この成分が入った商品を見る"}
+            </button>
+            {productsOpen && (
+              <div className="product-grid product-reveal">
+                {result.products.map((product) => (
+                  <article key={product.id} className="product-card">
+                    {product.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={product.imageUrl} alt="" className="product-image" />
+                    ) : (
+                      <div className="product-image placeholder">EC</div>
+                    )}
+                    <div className="product-body">
+                      <h3>{product.name}</h3>
+                      <p className="muted">
+                        {product.shop} / {product.price}
+                      </p>
+                      <p>{product.reason}</p>
+                      <a
+                        className="btn primary small"
+                        href={product.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        商品ページを開く
+                      </a>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="panel">
             <div className="result-head">
               <div>
-                <h2>5. 毎日の成長記録</h2>
+                <h2>毎日の成長記録</h2>
                 <p className="muted">
                   文章結果のみをこの端末に保存します。写真は保存しません。
                 </p>
@@ -489,49 +515,98 @@ export default function BeautyConciergeApp() {
   );
 }
 
+function markFromStars(stars: number): string {
+  if (stars >= 5) return "◎";
+  if (stars >= 4) return "○";
+  if (stars >= 3) return "△";
+  return "▲";
+}
+
+function moodLine(
+  score: number,
+  metrics: { key: string; stars: number; label: string }[]
+): string {
+  if (score >= 85) return "😊 今日の肌はかなり良好です";
+  if (score >= 75) return "🙂 今日の肌はまずまず良好です";
+  if (score >= 65) return "😌 今日の肌は少しケアが効きそうです";
+  const weak = metrics.filter((m) => m.stars <= 2).map((m) => m.label);
+  if (weak.length) return `🫣 今日は${weak[0]}を意識してみましょう`;
+  return "🫧 今日の肌を丁寧に見てみましょう";
+}
+
 function ScoreSparkline({ scores }: { scores: number[] }) {
-  const w = 320;
-  const h = 96;
-  const pad = 12;
-  const min = Math.min(...scores, 50);
-  const max = Math.max(...scores, 90);
+  const w = 340;
+  const h = 150;
+  const left = 42;
+  const right = 16;
+  const top = 18;
+  const bottom = 28;
+  const min = Math.min(...scores, 60);
+  const max = Math.max(...scores, 95);
   const span = Math.max(1, max - min);
-  const points = scores.map((s, i) => {
+  const coords = scores.map((s, i) => {
     const x =
-      pad + (scores.length === 1 ? w / 2 - pad : (i / (scores.length - 1)) * (w - pad * 2));
-    const y = h - pad - ((s - min) / span) * (h - pad * 2);
-    return `${x},${y}`;
+      left +
+      (scores.length === 1
+        ? (w - left - right) / 2
+        : (i / (scores.length - 1)) * (w - left - right));
+    const y = top + (1 - (s - min) / span) * (h - top - bottom);
+    return { x, y, s };
   });
-  const polyline = points.join(" ");
+  const polyline = coords.map((c) => `${c.x},${c.y}`).join(" ");
+  const area =
+    `${left},${h - bottom} ` +
+    polyline +
+    ` ${coords[coords.length - 1]?.x ?? left},${h - bottom}`;
 
   return (
-    <div className="sparkline">
+    <div className="sparkline chart-bold">
       <svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="スコア推移グラフ">
-        <polyline
-          fill="none"
-          stroke="#c45b6c"
-          strokeWidth="3"
-          strokeLinejoin="round"
-          strokeLinecap="round"
-          points={polyline}
-        />
-        {scores.map((s, i) => {
-          const [x, y] = points[i].split(",").map(Number);
+        {[0, 0.5, 1].map((t) => {
+          const y = top + (1 - t) * (h - top - bottom);
+          const val = Math.round(min + span * t);
           return (
-            <g key={`${s}-${i}`}>
-              <circle cx={x} cy={y} r="4.5" fill="#9e3f52" />
-              <text x={x} y={y - 8} textAnchor="middle" className="spark-label">
-                {s}
+            <g key={t}>
+              <line
+                x1={left}
+                x2={w - right}
+                y1={y}
+                y2={y}
+                stroke="rgba(74,52,40,0.12)"
+                strokeDasharray="4 4"
+              />
+              <text x={left - 8} y={y + 4} textAnchor="end" className="spark-axis">
+                {val}
               </text>
             </g>
           );
         })}
-      </svg>
-      <div className="spark-caption">
-        {scores.map((s, i) => (
-          <span key={`${s}-${i}`}>{s}</span>
+        <polygon points={area} fill="rgba(196,91,108,0.12)" />
+        <polyline
+          fill="none"
+          stroke="#c45b6c"
+          strokeWidth="3.5"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          points={polyline}
+        />
+        {coords.map((c, i) => (
+          <g key={`${c.s}-${i}`}>
+            <line
+              x1={left}
+              x2={c.x - 8}
+              y1={c.y}
+              y2={c.y}
+              stroke="rgba(196,91,108,0.25)"
+              strokeWidth="1.5"
+            />
+            <circle cx={c.x} cy={c.y} r="6" fill="#fff" stroke="#9e3f52" strokeWidth="3" />
+            <text x={c.x} y={c.y - 12} textAnchor="middle" className="spark-label">
+              {c.s}
+            </text>
+          </g>
         ))}
-      </div>
+      </svg>
     </div>
   );
 }

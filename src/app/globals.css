@@ -627,3 +627,158 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+/* —— 診断ヒーロー（情報量を絞る） —— */
+.diagnosis-hero {
+  border-color: rgba(196, 91, 108, 0.28);
+  background: linear-gradient(
+    165deg,
+    rgba(255, 244, 240, 0.98),
+    rgba(255, 252, 248, 0.96) 60%,
+    rgba(238, 246, 241, 0.75)
+  );
+  text-align: center;
+}
+
+.diagnosis-kicker {
+  margin: 0;
+  font-weight: 800;
+  color: var(--rose-deep);
+  letter-spacing: 0.04em;
+}
+
+.diagnosis-score-row {
+  display: flex;
+  justify-content: center;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+}
+
+.diagnosis-score {
+  font-size: clamp(3.4rem, 12vw, 4.6rem);
+  line-height: 1;
+  font-weight: 800;
+  color: var(--rose-deep);
+  letter-spacing: -0.04em;
+}
+
+.diagnosis-score-unit {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.diagnosis-mood {
+  margin: 0.55rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.diagnosis-tip {
+  margin: 0.45rem auto 0;
+  max-width: 28rem;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.diagnosis-rule {
+  border: 0;
+  border-top: 1px solid rgba(74, 52, 40, 0.14);
+  margin: 1.1rem auto;
+  width: min(100%, 22rem);
+}
+
+.diagnosis-metrics {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  width: min(100%, 22rem);
+  display: grid;
+  gap: 0.55rem;
+  text-align: left;
+}
+
+.diagnosis-metrics li {
+  display: grid;
+  grid-template-columns: 1.5rem 3.5rem 1fr auto;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.45rem 0.55rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.metric-name {
+  font-weight: 700;
+}
+
+.metric-mark {
+  font-weight: 800;
+  color: var(--sage);
+  min-width: 1.2rem;
+  text-align: center;
+}
+
+.mode-pill.compact {
+  margin-top: 0.9rem;
+}
+
+.detail-toggle {
+  margin-top: 0.85rem;
+  width: min(100%, 16rem);
+}
+
+.detail-expand {
+  margin-top: 1rem;
+  text-align: left;
+  animation: fadeSlide 0.25s ease;
+}
+
+.detail-expand .summary {
+  text-align: left;
+}
+
+.sub-heading {
+  margin: 1rem 0 0.55rem;
+  font-size: 1rem;
+}
+
+.ingredient-why-label {
+  font-size: 0.75rem !important;
+  font-weight: 800;
+  color: var(--sage) !important;
+  margin-top: 0.2rem;
+}
+
+.ingredient-cta {
+  width: 100%;
+  margin-top: 1rem;
+  justify-content: center;
+}
+
+.product-reveal {
+  margin-top: 1rem;
+  animation: fadeSlide 0.25s ease;
+}
+
+.chart-bold svg {
+  min-height: 160px;
+}
+
+.spark-axis {
+  fill: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+@keyframes fadeSlide {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
